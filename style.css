@@ -1,1 +1,69 @@
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const statusText = document.getElementById('status-text');
 
+function tocarSom(elemento) {
+    const tipo = elemento.getAttribute('data-type');
+    const freq = parseFloat(elemento.getAttribute('data-note'));
+    
+    const oscilador = audioCtx.createOscillator();
+    const ganho = audioCtx.createGain();
+    
+    // Filtro bizarro para deixar o som abafado (característico do Lo-Fi/Experimental)
+    const filtro = audioCtx.createBiquadFilter();
+    filtro.type = "lowpass";
+    filtro.frequency.value = 400; // Corta os agudos chatos
+
+    oscilador.connect(filto);
+    filtro.connect(ganho);
+    ganho.connect(audioCtx.destination);
+
+    if (tipo === 'sub') {
+        oscilador.type = 'sine'; // Onda suave para o grave pesado
+        oscilador.frequency.value = freq;
+        ganho.gain.setValueAtTime(0.8, audioCtx.currentTime);
+        ganho.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+        statusText.textContent = ">> grave batendo pesado.";
+    } 
+    else if (tipo === 'mellow') {
+        oscilador.type = 'triangle'; 
+        oscilador.frequency.value = freq;
+        ganho.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        ganho.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.2);
+        statusText.textContent = ">> acorde melancólico.";
+    } 
+    else if (tipo === 'noise') {
+        // Simulação caseira de estalo de vinil usando onda dente de serra super rápida
+        oscilador.type = 'sawtooth';
+        oscidulador.frequency.value = 12; 
+        ganho.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        ganho.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+        statusText.textContent = ">> chiado de vinil gasto.";
+    }
+    else if (tipo === 'glitch') {
+        oscilador.type = 'sawtooth';
+        oscilador.frequency.value = freq * 1.5;
+        ganho.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        ganho.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        statusText.textContent = ">> erro no sample.";
+    }
+
+    oscilador.start();
+    oscilador.stop(audioCtx.currentTime + 1.5);
+}
+
+// Cliques do Mouse
+document.querySelectorAll('.pad').forEach(pad => {
+    pad.addEventListener('click', () => tocarSom(pad));
+});
+
+// Teclado (Q, W, E, R)
+window.addEventListener('keydown', (e) => {
+    const tecla = e.key.toUpperCase();
+    const pad = document.querySelector(`.pad[data-key="${tecla}"]`);
+    
+    if (pad) {
+        pad.classList.add('active');
+        tocarSom(pad);
+        setTimeout(() => pad.classList.remove('active'), 100);
+    }
+});
